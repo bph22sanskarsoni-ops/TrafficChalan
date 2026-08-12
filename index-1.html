@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Challan Control Room</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root {
+    --bg: #0b0f14;
+    --panel: #10161d;
+    --line: #1f2a35;
+    --amber: #ffb020;
+    --amber-dim: #7a5a1a;
+    --red: #ff4d4d;
+    --green: #35d07f;
+    --text: #d9e2ea;
+    --text-dim: #6c7a89;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ---------- LOGIN SCREEN ---------- */
+  #loginScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,176,32,0.06), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(53,208,127,0.05), transparent 40%),
+      var(--bg);
+  }
+  .login-card {
+    width: 340px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 36px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: repeating-linear-gradient(90deg, var(--amber) 0 10px, transparent 10px 16px);
+  }
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 2px;
+    margin-bottom: 18px;
+  }
+  .login-card h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .login-card p.sub {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 24px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .field input {
+    width: 100%;
+    background: #0b0f14;
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--amber);
+  }
+  #loginBtn {
+    width: 100%;
+    background: var(--amber);
+    color: #16110a;
+    border: none;
+    padding: 11px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  #loginBtn:hover { background: #ffc656; }
+  #loginError {
+    color: var(--red);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 12px;
+    min-height: 16px;
+  }
+
+  /* ---------- DASHBOARD ---------- */
+  #dashboardScreen { display: none; }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  header h1 { font-size: 20px; letter-spacing: 0.5px; }
+  header h1 span { color: var(--amber); }
+  #logoutBtn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    padding: 7px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  #logoutBtn:hover { border-color: var(--red); color: var(--red); }
+
+  .stats {
+    display: flex;
+    gap: 16px;
+    padding: 20px 28px 0;
+  }
+  .stat-box {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 14px 18px;
+    flex: 1;
+  }
+  .stat-box .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--amber);
+  }
+  .stat-box .label {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 28px 40px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+  }
+  .card img {
+    width: 140px;
+    height: 100px;
+    object-fit: cover;
+    display: block;
+    background: #060809;
+    flex-shrink: 0;
+  }
+  .card-body {
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    gap: 20px;
+  }
+  .card-index {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    width: 48px;
+    flex-shrink: 0;
+  }
+  .speed-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 110px;
+  }
+  .speed-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--red);
+  }
+  .speed-unit { font-size: 11px; color: var(--text-dim); }
+  .timestamp {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+  #emptyState {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ---------- SETTINGS PANEL ---------- */
+  .settings-box {
+    background: var(--panel);
+    border: 1px solid var(--amber-dim);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin: 20px 28px 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .settings-box .label {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .settings-box input[type=number] {
+    width: 90px;
+    background: #0b0f14;
+    border: 1px solid var(--line);
+    color: var(--amber);
+    padding: 8px 10px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .settings-box input[type=number]:focus {
+    outline: none;
+    border-color: var(--amber);
+  }
+  #saveLimitBtn {
+    background: var(--amber);
+    color: #16110a;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #saveLimitBtn:hover { background: #ffc656; }
+  #limitStatus {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--green);
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="badge">RESTRICTED ACCESS</div>
+    <h1>E-Challan Control</h1>
+    <p class="sub">Admin login required to view violations</p>
+
+    <div class="field">
+      <label>Admin ID (email)</label>
+      <input type="email" id="adminEmail" placeholder="admin@school.com">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="adminPassword" placeholder="••••••••">
+    </div>
+    <button id="loginBtn">LOGIN</button>
+    <div id="loginError"></div>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD SCREEN ============ -->
+<div id="dashboardScreen">
+  <header>
+    <h1>E-Challan <span>Control Room</span></h1>
+    <button id="logoutBtn">LOGOUT</button>
+  </header>
+
+  <div class="stats">
+    <div class="stat-box">
+      <div class="num" id="totalCount">0</div>
+      <div class="label">Total Violations</div>
+    </div>
+    <div class="stat-box">
+      <div class="num" id="highestSpeed">0</div>
+      <div class="label">Highest Speed (km/h)</div>
+    </div>
+  </div>
+
+  <div class="settings-box">
+    <span class="label">Speed Limit</span>
+    <input type="number" id="limitInput" min="1" step="1" value="40">
+    <span class="label">km/h</span>
+    <span class="label" style="margin-left:14px;">Camera IP</span>
+    <input type="text" id="cameraIpInput" placeholder="192.168.1.5:8080" style="width:160px;">
+    <button id="saveLimitBtn">SAVE</button>
+    <span id="limitStatus"></span>
+  </div>
+
+  <div id="grid">
+    <div id="emptyState">No violations recorded yet. Waiting for data...</div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+  // ---------- FIREBASE CONFIG ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_5HQEjL4io1L-_GmuuJ79YrtZwZwFr9c",
+    authDomain: "trafficchalan-khush.firebaseapp.com",
+    databaseURL: "https://trafficchalan-khush-default-rtdb.firebaseio.com",
+    projectId: "trafficchalan-khush",
+    storageBucket: "trafficchalan-khush.firebasestorage.app",
+    messagingSenderId: "978532235774",
+    appId: "1:978532235774:web:aa49df1efd29c83bca68af"
+  };
+  firebase.initializeApp(firebaseConfig);
+  // ----------------------------------------------------
+
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  const loginScreen = document.getElementById('loginScreen');
+  const dashboardScreen = document.getElementById('dashboardScreen');
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const loginError = document.getElementById('loginError');
+
+  loginBtn.addEventListener('click', () => {
+    const email = document.getElementById('adminEmail').value.trim();
+    const password = document.getElementById('adminPassword').value;
+    loginError.textContent = '';
+
+    auth.signInWithEmailAndPassword(email, password)
+      .catch((err) => {
+        loginError.textContent = 'Login failed: incorrect ID or password.';
+      });
+  });
+
+  logoutBtn.addEventListener('click', () => auth.signOut());
+
+  auth.onAuthStateChanged((user) => {
+    if (user) {
+      loginScreen.style.display = 'none';
+      dashboardScreen.style.display = 'block';
+      loadViolations();
+      loadSpeedLimit();
+    } else {
+      loginScreen.style.display = 'flex';
+      dashboardScreen.style.display = 'none';
+    }
+  });
+
+  function loadViolations() {
+    const ref = db.ref('violations');
+    ref.on('value', (snapshot) => {
+      const data = snapshot.val();
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      if (!data) {
+        grid.innerHTML = '<div id="emptyState">No violations recorded yet. Waiting for data...</div>';
+        document.getElementById('totalCount').textContent = '0';
+        document.getElementById('highestSpeed').textContent = '0';
+        return;
+      }
+
+      const entries = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
+      let highest = 0;
+
+      entries.forEach((entry, i) => {
+        if (entry.speed > highest) highest = entry.speed;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const img = document.createElement('img');
+        img.src = entry.photo ? ('data:image/jpeg;base64,' + entry.photo) : '';
+        img.alt = 'Violation photo';
+
+        const body = document.createElement('div');
+        body.className = 'card-body';
+        body.innerHTML = `
+          <span class="card-index">#${entries.length - i}</span>
+          <div class="speed-row">
+            <span class="speed-val">${entry.speed.toFixed(1)}</span>
+            <span class="speed-unit">km/h</span>
+          </div>
+          <span class="timestamp">${new Date(entry.timestamp).toLocaleString()}</span>
+        `;
+
+        card.appendChild(img);
+        card.appendChild(body);
+        grid.appendChild(card);
+      });
+
+      document.getElementById('totalCount').textContent = entries.length;
+      document.getElementById('highestSpeed').textContent = highest.toFixed(1);
+    });
+  }
+  function loadSpeedLimit() {
+    db.ref('settings/speedLimit').once('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val !== null) {
+        document.getElementById('limitInput').value = val;
+      }
+    });
+    db.ref('settings/cameraIp').once('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val !== null) {
+        document.getElementById('cameraIpInput').value = val;
+      }
+    });
+  }
+
+  document.getElementById('saveLimitBtn').addEventListener('click', () => {
+    const newLimit = parseFloat(document.getElementById('limitInput').value);
+    const newIp = document.getElementById('cameraIpInput').value.trim();
+    const statusEl = document.getElementById('limitStatus');
+    if (isNaN(newLimit) || newLimit <= 0) {
+      statusEl.style.color = '#ff4d4d';
+      statusEl.textContent = 'Enter a valid speed limit';
+      return;
+    }
+    const updates = { speedLimit: newLimit };
+    if (newIp.length > 0) updates.cameraIp = newIp;
+
+    db.ref('settings').update(updates)
+      .then(() => {
+        statusEl.style.color = '#35d07f';
+        statusEl.textContent = 'Saved ✓';
+        setTimeout(() => statusEl.textContent = '', 2000);
+      })
+      .catch(() => {
+        statusEl.style.color = '#ff4d4d';
+        statusEl.textContent = 'Failed to save';
+      });
+  });
+</script>
+</body>
+</html>
