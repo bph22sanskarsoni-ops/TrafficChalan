@@ -287,6 +287,54 @@
     font-size: 12px;
     color: var(--green);
   }
+
+  /* ---------- MANUAL CAPTURE PANEL ---------- */
+  .capture-box {
+    background: var(--panel);
+    border: 1px solid var(--green);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin: 14px 28px 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .capture-box input[type=text] {
+    flex: 1;
+    min-width: 200px;
+    background: #0b0f14;
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 3px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+  }
+  .capture-box input[type=text]:focus {
+    outline: none;
+    border-color: var(--green);
+  }
+  #manualCaptureBtn {
+    background: var(--green);
+    color: #06170f;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #manualCaptureBtn:hover { background: #4de096; }
+  #manualCaptureBtn:disabled { background: #234; color: #6c7a89; cursor: not-allowed; }
+  #captureStatus {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--green);
+    width: 100%;
+  }
 </style>
 </head>
 <body>
@@ -337,6 +385,13 @@
     <input type="text" id="cameraIpInput" placeholder="192.168.1.5:8080" style="width:160px;">
     <button id="saveLimitBtn">SAVE</button>
     <span id="limitStatus"></span>
+  </div>
+
+  <div class="capture-box">
+    <span class="label" style="white-space:nowrap;">📷 Manual Capture</span>
+    <input type="text" id="captureReasonInput" placeholder="Reason (e.g. user taken, random check)">
+    <button id="manualCaptureBtn">CAPTURE PHOTO</button>
+    <span id="captureStatus"></span>
   </div>
 
   <div id="grid">
@@ -415,7 +470,7 @@
       let highest = 0;
 
       entries.forEach((entry, i) => {
-        if (entry.speed > highest) highest = entry.speed;
+        if (entry.speed && entry.speed > highest) highest = entry.speed;
 
         const card = document.createElement('div');
         card.className = 'card';
@@ -426,12 +481,12 @@
 
         const body = document.createElement('div');
         body.className = 'card-body';
+        const speedOrReason = entry.reason
+          ? `<span class="speed-val" style="color:#35d07f; font-size:15px;">📷 ${entry.reason}</span>`
+          : `<div class="speed-row"><span class="speed-val">${entry.speed.toFixed(1)}</span><span class="speed-unit">km/h</span></div>`;
         body.innerHTML = `
           <span class="card-index">#${entries.length - i}</span>
-          <div class="speed-row">
-            <span class="speed-val">${entry.speed.toFixed(1)}</span>
-            <span class="speed-unit">km/h</span>
-          </div>
+          ${speedOrReason}
           <span class="timestamp">${new Date(entry.timestamp).toLocaleString()}</span>
         `;
 
@@ -481,6 +536,50 @@
         statusEl.style.color = '#ff4d4d';
         statusEl.textContent = 'Failed to save';
       });
+  });
+
+  // ---------- MANUAL CAPTURE ----------
+  document.getElementById('manualCaptureBtn').addEventListener('click', () => {
+    const reason = document.getElementById('captureReasonInput').value.trim();
+    const btn = document.getElementById('manualCaptureBtn');
+    const statusEl = document.getElementById('captureStatus');
+
+    if (reason.length === 0) {
+      statusEl.style.color = '#ff4d4d';
+      statusEl.textContent = 'Please type a reason first';
+      return;
+    }
+
+    btn.disabled = true;
+    statusEl.style.color = '#ffb020';
+    statusEl.textContent = 'Requesting photo from ESP8266... (usually within 1-2s)';
+
+    db.ref('settings').update({
+      manualCaptureRequested: true,
+      manualCaptureReason: reason
+    }).then(() => {
+      // Watch for the ESP8266 to clear the flag once it's done capturing
+      const flagRef = db.ref('settings/manualCaptureRequested');
+      const listener = flagRef.on('value', (snap) => {
+        if (snap.val() === false) {
+          flagRef.off('value', listener);
+          btn.disabled = false;
+          statusEl.style.color = '#35d07f';
+          statusEl.textContent = 'Photo captured ✓';
+          document.getElementById('captureReasonInput').value = '';
+          setTimeout(() => statusEl.textContent = '', 3000);
+        }
+      });
+      // safety timeout in case ESP8266 is offline
+      setTimeout(() => {
+        if (btn.disabled) {
+          flagRef.off('value', listener);
+          btn.disabled = false;
+          statusEl.style.color = '#ff4d4d';
+          statusEl.textContent = 'No response from ESP8266 — check it is powered on and connected';
+        }
+      }, 20000);
+    });
   });
 </script>
 </body>
