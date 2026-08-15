@@ -564,10 +564,18 @@
         if (snap.val() === false) {
           flagRef.off('value', listener);
           btn.disabled = false;
-          statusEl.style.color = '#35d07f';
-          statusEl.textContent = 'Photo captured ✓';
-          document.getElementById('captureReasonInput').value = '';
-          setTimeout(() => statusEl.textContent = '', 3000);
+          db.ref('settings/manualCaptureError').once('value', (errSnap) => {
+            const err = errSnap.val();
+            if (err) {
+              statusEl.style.color = '#ff4d4d';
+              statusEl.textContent = 'Failed: ' + err;
+            } else {
+              statusEl.style.color = '#35d07f';
+              statusEl.textContent = 'Photo captured ✓';
+              document.getElementById('captureReasonInput').value = '';
+              setTimeout(() => statusEl.textContent = '', 3000);
+            }
+          });
         }
       });
       // safety timeout in case ESP8266 is offline
